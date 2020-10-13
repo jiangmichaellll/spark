@@ -26,6 +26,7 @@ import org.apache.kafka.clients.consumer.internals.NoOpConsumerRebalanceListener
 import org.apache.kafka.common.TopicPartition
 
 import org.apache.spark.kafka010.KafkaConfigUpdater
+import org.apache.spark.sql.kafka010.consumer.KafkaConsumerProvider
 
 /**
  * Subscribe allows you to subscribe to a fixed collection of topics.
@@ -58,7 +59,7 @@ private[kafka010] case class AssignStrategy(partitions: Array[TopicPartition])
   override def createConsumer(
       kafkaParams: ju.Map[String, Object]): Consumer[Array[Byte], Array[Byte]] = {
     val updatedKafkaParams = setAuthenticationConfigIfNeeded(kafkaParams)
-    val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](updatedKafkaParams)
+    val consumer = KafkaConsumerProvider.createKafkaConsumer(updatedKafkaParams)
     consumer.assign(ju.Arrays.asList(partitions: _*))
     consumer
   }
@@ -69,11 +70,12 @@ private[kafka010] case class AssignStrategy(partitions: Array[TopicPartition])
 /**
  * Subscribe to a fixed collection of topics.
  */
-private[kafka010] case class SubscribeStrategy(topics: Seq[String]) extends ConsumerStrategy {
+private[kafka010] case class SubscribeStrategy(topics: Seq[String])
+  extends ConsumerStrategy {
   override def createConsumer(
       kafkaParams: ju.Map[String, Object]): Consumer[Array[Byte], Array[Byte]] = {
     val updatedKafkaParams = setAuthenticationConfigIfNeeded(kafkaParams)
-    val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](updatedKafkaParams)
+    val consumer = KafkaConsumerProvider.createKafkaConsumer(updatedKafkaParams)
     consumer.subscribe(topics.asJava)
     consumer
   }
@@ -89,7 +91,7 @@ private[kafka010] case class SubscribePatternStrategy(topicPattern: String)
   override def createConsumer(
       kafkaParams: ju.Map[String, Object]): Consumer[Array[Byte], Array[Byte]] = {
     val updatedKafkaParams = setAuthenticationConfigIfNeeded(kafkaParams)
-    val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](updatedKafkaParams)
+    val consumer = KafkaConsumerProvider.createKafkaConsumer(updatedKafkaParams)
     consumer.subscribe(
       ju.regex.Pattern.compile(topicPattern),
       new NoOpConsumerRebalanceListener())
